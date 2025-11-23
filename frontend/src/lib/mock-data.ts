@@ -12,11 +12,17 @@ export const mockUsers: User[] = [
   { id: 'user-2', name: 'Chloe', email: 'chloe@example.com', avatarUrl: 'https://i.pravatar.cc/150?u=user-2' },
   { id: 'user-3', name: 'Robert', email: 'robert@example.com', avatarUrl: 'https://i.pravatar.cc/150?u=user-3' },
   { id: 'user-4', name: 'Maria', email: 'maria@example.com', avatarUrl: 'https://i.pravatar.cc/150?u=user-4' },
+  { id: 'user-5', name: 'David', email: 'david@example.com', avatarUrl: 'https://i.pravatar.cc/150?u=user-5' },
 ];
 
 export const mockConnections: Connection[] = [
     { id: 'conn-1', user: mockUsers[1], status: 'accepted' },
     { id: 'conn-2', user: mockUsers[2], status: 'accepted' },
+];
+
+export const mockPendingConnections: Connection[] = [
+    { id: 'conn-3', user: mockUsers[3], status: 'pending' },
+    { id: 'conn-4', user: mockUsers[4], status: 'pending' },
 ];
 
 export const mockHerds: Herd[] = [

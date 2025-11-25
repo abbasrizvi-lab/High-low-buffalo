@@ -1,8 +1,32 @@
 import { CreateReflectionDialog } from "@/components/reflections/CreateReflectionDialog";
 import ReflectionCard from "@/components/reflections/ReflectionCard";
-import { mockCurrentUser, mockReflections } from "@/lib/mock-data";
+import { mockCurrentUser } from "@/lib/mock-data";
+import { supabase } from "@/lib/supabaseClient";
+import { Reflection } from "@/types";
+import { useEffect, useState } from "react";
 
 const DashboardPage = () => {
+  const [reflections, setReflections] = useState<Reflection[]>([]);
+
+  useEffect(() => {
+    const fetchReflections = async () => {
+      const { data, error } = await supabase
+        .from("reflections")
+        .select(`
+          *,
+          author:users(*)
+        `);
+
+      if (error) {
+        console.error(error);
+      } else {
+        setReflections(data as any);
+      }
+    };
+
+    fetchReflections();
+  }, []);
+
   return (
     <div className="max-w-2xl mx-auto">
       <header className="flex justify-between items-center mb-6">
@@ -14,11 +38,11 @@ const DashboardPage = () => {
       </header>
 
       <div className="space-y-4">
-        {mockReflections.map((reflection) => (
-          <ReflectionCard 
-            key={reflection.id} 
-            reflection={reflection} 
-            currentUser={mockCurrentUser} 
+        {reflections.map((reflection) => (
+          <ReflectionCard
+            key={reflection.id}
+            reflection={reflection}
+            currentUser={mockCurrentUser}
           />
         ))}
       </div>

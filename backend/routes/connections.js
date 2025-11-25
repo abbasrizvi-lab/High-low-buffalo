@@ -23,11 +23,34 @@ router.get('/:id', async (req, res) => {
 
 // Create a new connection
 router.post('/', async (req, res) => {
-    const { requester_id, recipient_id, status } = req.body;
+    const { requester_id, email, status, access_token, refresh_token } = req.body;
+
+    await supabase.auth.setSession({
+        access_token,
+        refresh_token,
+    });
+
+    const { data: recipient_id, error: rpcError } = await supabase.rpc(
+        "get_user_id_by_email",
+        { user_email: email }
+    );
+
+    if (rpcError) {
+        return res.status(500).json({ error: rpcError.message });
+    }
+
+    if (!recipient_id) {
+        return res.status(404).json({ error: "Recipient not found" });
+    }
+
     const { data, error } = await supabase
         .from('connections')
         .insert([{ requester_id, recipient_id, status }]);
-    if (error) return res.status(500).json({ error: error.message });
+
+    if (error) {
+        return res.status(500).json({ error: error.message });
+    }
+
     res.json(data);
 });
 

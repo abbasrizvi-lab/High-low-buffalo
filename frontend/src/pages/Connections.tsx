@@ -10,42 +10,88 @@ const ConnectionsPage = () => {
   const [connections, setConnections] = useState<Connection[]>([]);
   const [pendingConnections, setPendingConnections] = useState<Connection[]>([]);
 
+  const fetchConnections = async () => {
+    const { data, error } = await supabase.rpc('fetch_connections');
+
+    if (error) {
+      console.error("Error fetching connections:", error);
+      return;
+    }
+
+    const formattedData = data.map(c => ({
+      id: c.id,
+      requester_id: c.requester_id,
+      recipient_id: c.recipient_id,
+      status: c.status,
+      created_at: c.created_at,
+      updated_at: c.updated_at,
+      user: {
+        id: c.user_id,
+        name: c.user_name,
+        email: c.user_email,
+        avatarUrl: c.user_avatar_url,
+      }
+    }));
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const accepted = formattedData.filter(c => c.status === 'accepted');
+    const pending = formattedData.filter(c => c.status === 'pending' && c.recipient_id === user.id);
+
+    setConnections(accepted as any);
+    setPendingConnections(pending as any);
+  };
+
   useEffect(() => {
-    const fetchConnections = async () => {
-      const { data, error } = await supabase
-        .from("connections")
-        .select(`
-          *,
-          user:users(*)
-        `)
-        .eq("status", "accepted");
-
-      if (error) {
-        console.error(error);
-      } else {
-        setConnections(data as any);
-      }
-    };
-
-    const fetchPendingConnections = async () => {
-      const { data, error } = await supabase
-        .from("connections")
-        .select(`
-          *,
-          user:users(*)
-        `)
-        .eq("status", "pending");
-
-      if (error) {
-        console.error(error);
-      } else {
-        setPendingConnections(data as any);
-      }
-    };
-
     fetchConnections();
-    fetchPendingConnections();
+    const channel = supabase.channel('connections-follow-up');
+    channel
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'connections' }, () => {
+        fetchConnections();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    }
   }, []);
+
+  const handleAccept = async (connectionId: string) => {
+    const { error } = await supabase
+      .from("connections")
+      .update({ status: "accepted" })
+      .eq("id", connectionId);
+    if (error) {
+      console.error(error);
+    } else {
+      fetchConnections();
+    }
+  };
+
+  const handleDecline = async (connectionId: string) => {
+    const { error } = await supabase
+      .from("connections")
+      .delete()
+      .eq("id", connectionId);
+    if (error) {
+      console.error(error);
+    } else {
+      fetchConnections();
+    }
+  };
+
+  const handleRemove = async (connectionId: string) => {
+    const { error } = await supabase
+      .from("connections")
+      .delete()
+      .eq("id", connectionId);
+    if (error) {
+      console.error(error);
+    } else {
+      fetchConnections();
+    }
+  };
 
   return (
     <div className="max-w-3xl mx-auto">
@@ -71,10 +117,19 @@ const ConnectionsPage = () => {
           </TabsTrigger>
         </TabsList>
         <TabsContent value="connections">
-            <ConnectionList connections={connections} type="accepted" />
+          <ConnectionList
+            connections={connections}
+            type="accepted"
+            onRemove={handleRemove}
+          />
         </TabsContent>
         <TabsContent value="pending">
-            <ConnectionList connections={pendingConnections} type="pending" />
+          <ConnectionList
+            connections={pendingConnections}
+            type="pending"
+            onAccept={handleAccept}
+            onDecline={handleDecline}
+          />
         </TabsContent>
       </Tabs>
     </div>

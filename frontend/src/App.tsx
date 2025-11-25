@@ -10,6 +10,7 @@ import Layout from "./components/layout/Layout";
 import DashboardPage from "./pages/Dashboard";
 import HerdsPage from "./pages/Herds";
 import ConnectionsPage from "./pages/Connections";
+import ProfilePage from "./pages/Profile";
 import { AuthProvider } from "./contexts/AuthContext";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 
@@ -31,6 +32,7 @@ const App = () => (
                 <Route path="/" element={<DashboardPage />} />
                 <Route path="/herds" element={<HerdsPage />} />
                 <Route path="/connections" element={<ConnectionsPage />} />
+                <Route path="/profile" element={<ProfilePage />} />
               </Route>
             </Route>
 

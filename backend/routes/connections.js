@@ -1,14 +1,24 @@
 const express = require('express');
 const router = express.Router();
 const { supabase } = require('../supabaseClient');
+const authenticate = require('../middleware/auth');
 
-// Get all connections
-router.get('/', async (req, res) => {
-    const { data, error } = await supabase
+// Get all connections for the current user
+router.get('/', authenticate, async (req, res) => {
+    const { data, error } = await req.supabase
         .from('connections')
-        .select('*');
+        .select('*, recipient:recipient_id(id, email, username), requester:requester_id(id, email, username)')
+        .or(`requester_id.eq.${req.user.id},recipient_id.eq.${req.user.id}`);
+
     if (error) return res.status(500).json({ error: error.message });
-    res.json(data);
+
+    // a user's connections are where the status is 'accepted'
+    // and where the user is either the requester or the recipient
+    const connections = data
+        .filter(c => c.status === 'accepted')
+        .map(c => c.requester_id === req.user.id ? c.recipient : c.requester);
+
+    res.json(connections);
 });
 
 // Get connection by id

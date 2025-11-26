@@ -2,12 +2,14 @@ export interface User {
   id: string;
   name: string;
   email: string;
+  username?: string;
   avatarUrl?: string;
 }
 
 export interface Connection {
   id: string;
-  user: User;
+  email: string;
+  username?: string;
   status: 'pending' | 'accepted';
 }
 
@@ -20,12 +22,16 @@ export interface Herd {
 
 export interface Reflection {
   id: string;
-  author: User;
-  highText: string;
-  lowText: string;
-  buffaloText: string;
-  audienceType: 'self' | 'user' | 'herd';
-  audienceId: string;
-  createdAt: string;
-  reactions: { userId: string; type: 'curiosity' }[];
+  author_id: string;
+  author?: User; // Optional, populated via join
+  high_text?: string;
+  low_text?: string;
+  buffalo_text?: string;
+  high_image_url?: string;
+  low_image_url?: string;
+  buffalo_image_url?: string;
+  audience_type: 'self' | 'user' | 'herd';
+  audience_id: string;
+  created_at: string;
+  reactions?: { userId: string; type: 'curiosity' }[];
 }

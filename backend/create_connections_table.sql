@@ -13,8 +13,10 @@ CREATE TABLE public.connections (
     created_at timestamp with time zone NOT NULL DEFAULT now(),
     updated_at timestamp with time zone NOT NULL DEFAULT now(),
     CONSTRAINT connections_pkey PRIMARY KEY (id),
-    CONSTRAINT connections_requester_id_fkey FOREIGN KEY (requester_id) REFERENCES auth.users(id) ON DELETE CASCADE,
-    CONSTRAINT connections_recipient_id_fkey FOREIGN KEY (recipient_id) REFERENCES auth.users(id) ON DELETE CASCADE
+    CONSTRAINT connections_requester_id_fkey FOREIGN KEY (requester_id) REFERENCES public.users(id) ON DELETE CASCADE,
+    CONSTRAINT connections_recipient_id_fkey FOREIGN KEY (recipient_id) REFERENCES public.users(id) ON DELETE CASCADE,
+    CONSTRAINT unique_connection UNIQUE (requester_id, recipient_id),
+    CONSTRAINT check_requester_recipient CHECK (requester_id <> recipient_id)
 );
 
 -- Add a trigger to automatically update the updated_at timestamp
@@ -29,7 +31,7 @@ ALTER TABLE public.connections ENABLE ROW LEVEL SECURITY;
 -- Policy: Users can view their own connections
 CREATE POLICY "Users can view their own connections"
     ON public.connections FOR SELECT
-    USING (auth.uid() = requester_id OR auth.uid() = recipient_id);
+    USING (requester_id = auth.uid() OR recipient_id = auth.uid());
 
 -- Policy: Users can insert their own connections
 CREATE POLICY "Users can insert their own connections"

@@ -4,11 +4,13 @@ import { Reflection, User, Connection, Herd } from "@/types";
 import { useEffect, useState, useContext } from "react";
 import { AuthContext } from "@/contexts/AuthContext";
 import { toast } from "@/hooks/use-toast";
+import { Button } from "@/components/ui/button";
 
 const DashboardPage = () => {
   const [reflections, setReflections] = useState<Reflection[]>([]);
   const [connections, setConnections] = useState<Connection[]>([]);
   const [herds, setHerds] = useState<Herd[]>([]);
+  const [filter, setFilter] = useState<'all' | 'mine' | 'shared' | 'reminders'>('all');
   const { user, session } = useContext(AuthContext);
 
   useEffect(() => {
@@ -61,18 +63,59 @@ const DashboardPage = () => {
     name: user.user_metadata?.name || user.email || "Me",
   } : null;
 
+  const filteredReflections = reflections.filter(reflection => {
+    if (filter === 'all') return true;
+    if (filter === 'mine') return reflection.author_id === currentUser?.id;
+    if (filter === 'shared') return reflection.author_id !== currentUser?.id;
+    if (filter === 'reminders') return reflection.reminders?.some(r => r.user_id === currentUser?.id);
+    return true;
+  });
+
   return (
     <div className="max-w-2xl mx-auto">
-      <header className="flex justify-between items-center mb-6">
-        <div>
-            <h1 className="text-3xl font-bold">Your Feed</h1>
-            <p className="text-gray-600">Reflections from your connections and herds.</p>
+      <header className="flex flex-col gap-4 mb-6">
+        <div className="flex justify-between items-center">
+            <div>
+                <h1 className="text-3xl font-bold">Your Feed</h1>
+                <p className="text-gray-600">Reflections from your connections and herds.</p>
+            </div>
+            <CreateReflectionDialog />
         </div>
-        <CreateReflectionDialog />
+        
+        <div className="flex gap-2">
+            <Button
+                variant={filter === 'all' ? "default" : "outline"}
+                size="sm"
+                onClick={() => setFilter('all')}
+            >
+                All
+            </Button>
+            <Button
+                variant={filter === 'mine' ? "default" : "outline"}
+                size="sm"
+                onClick={() => setFilter('mine')}
+            >
+                My History
+            </Button>
+            <Button
+                variant={filter === 'shared' ? "default" : "outline"}
+                size="sm"
+                onClick={() => setFilter('shared')}
+            >
+                Shared with Me
+            </Button>
+            <Button
+                variant={filter === 'reminders' ? "default" : "outline"}
+                size="sm"
+                onClick={() => setFilter('reminders')}
+            >
+                Reminders
+            </Button>
+        </div>
       </header>
 
       <div className="space-y-4">
-        {currentUser && reflections.map((reflection) => (
+        {currentUser && filteredReflections.map((reflection) => (
           <ReflectionCard
             key={reflection.id}
             reflection={reflection}
@@ -83,6 +126,9 @@ const DashboardPage = () => {
             herds={herds}
           />
         ))}
+        {filteredReflections.length === 0 && (
+            <p className="text-center text-gray-500 py-8">No reflections found.</p>
+        )}
       </div>
     </div>
   );

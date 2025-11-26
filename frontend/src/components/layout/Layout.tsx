@@ -1,10 +1,14 @@
 import { Outlet } from "react-router-dom";
 import Sidebar from "./Sidebar";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/hooks/use-toast";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Button } from "@/components/ui/button";
+import { Menu } from "lucide-react";
 
 const Layout = () => {
+  const [isMobileOpen, setIsMobileOpen] = useState(false);
   const { session } = useAuth();
 
   useEffect(() => {
@@ -52,9 +56,25 @@ const Layout = () => {
   return (
     <div className="flex min-h-screen">
       <Sidebar />
-      <main className="flex-1 p-4 md:p-8">
-        <Outlet />
-      </main>
+      <div className="flex-1 flex flex-col">
+        <header className="lg:hidden flex h-14 items-center gap-4 border-b bg-background px-6">
+          <Sheet open={isMobileOpen} onOpenChange={setIsMobileOpen}>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="icon" className="shrink-0">
+                <Menu className="h-5 w-5" />
+                <span className="sr-only">Toggle navigation menu</span>
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="left" className="p-0 w-64">
+              <Sidebar />
+            </SheetContent>
+          </Sheet>
+          <div className="flex-1 font-semibold text-lg">High-Low-Buffalo</div>
+        </header>
+        <main className="flex-1 p-4 md:p-8">
+          <Outlet />
+        </main>
+      </div>
     </div>
   );
 };

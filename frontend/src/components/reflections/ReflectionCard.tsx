@@ -2,10 +2,11 @@ import { Reflection, User, Connection, Herd } from "@/types";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { MessageSquareQuote, Trash2, Lock, Users } from "lucide-react";
+import { MessageSquareQuote, Trash2, Lock, Users, Copy, Bell } from "lucide-react";
 import { formatDistanceToNow } from 'date-fns';
 import { useState } from "react";
 import { toast } from "@/hooks/use-toast";
+import { motion } from "framer-motion";
 
 interface ReflectionCardProps {
   reflection: Reflection;
@@ -18,8 +19,44 @@ interface ReflectionCardProps {
 
 const ReflectionCard = ({ reflection, currentUser, onDelete, token, connections = [], herds = [] }: ReflectionCardProps) => {
   const isOwnReflection = reflection.author_id === currentUser.id;
-  const hasReacted = reflection.reactions?.some(r => r.userId === currentUser.id) ?? false;
+  const hasReacted = reflection.reactions?.some(r => r.user_id === currentUser.id) ?? false;
+  const hasReminder = reflection.reminders?.some(r => r.user_id === currentUser.id) ?? false;
+  const curiosityCount = reflection.reactions?.filter(r => r.type === 'curiosity').length || 0;
   const [isDeleting, setIsDeleting] = useState(false);
+
+  const handleCuriosity = async () => {
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/reactions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ reflection_id: reflection.id, type: 'curiosity' })
+      });
+      if (!response.ok) throw new Error("Failed to react");
+      toast({ title: "Curious!", description: "You signaled curiosity." });
+    } catch (error) {
+      toast({ title: "Error", description: "Failed to react", variant: "destructive" });
+    }
+  };
+
+  const handleReminder = async () => {
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/reminders`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ reflection_id: reflection.id })
+      });
+      if (!response.ok) throw new Error("Failed to set reminder");
+      toast({ title: "Reminder Set", description: "You will be reminded about this." });
+    } catch (error) {
+      toast({ title: "Error", description: "Failed to set reminder", variant: "destructive" });
+    }
+  };
 
   const getSharedWithText = () => {
     if (reflection.audience_type === 'self') return { text: 'Private', icon: Lock };
@@ -43,6 +80,12 @@ const ReflectionCard = ({ reflection, currentUser, onDelete, token, connections 
   };
 
   const { text: sharedText, icon: SharedIcon } = getSharedWithText();
+
+  const handleCopy = () => {
+    const text = `High: ${reflection.high_text || 'N/A'}\nLow: ${reflection.low_text || 'N/A'}\nBuffalo: ${reflection.buffalo_text || 'N/A'}`;
+    navigator.clipboard.writeText(text);
+    toast({ title: "Copied", description: "Reflection copied to clipboard" });
+  };
 
   const handleDelete = async () => {
     if (!confirm("Are you sure you want to delete this reflection?")) return;
@@ -72,7 +115,13 @@ const ReflectionCard = ({ reflection, currentUser, onDelete, token, connections 
   const authorInitial = authorName.charAt(0).toUpperCase();
 
   return (
-    <Card className="w-full transition-all hover:shadow-md">
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+      whileHover={{ scale: 1.01 }}
+    >
+    <Card className="w-full transition-all hover:shadow-md border-border/50 bg-card/50 backdrop-blur-sm">
       <CardHeader className="pb-3">
         <div className="flex items-center gap-3">
           <Avatar className="h-10 w-10 border">
@@ -120,14 +169,30 @@ const ReflectionCard = ({ reflection, currentUser, onDelete, token, connections 
         <div className="flex items-center text-xs text-muted-foreground gap-1">
             <SharedIcon className="h-3 w-3" />
             <span>{sharedText}</span>
+            {isOwnReflection && curiosityCount > 0 && (
+                <span className="ml-2 flex items-center gap-1 text-amber-600 font-medium">
+                    <MessageSquareQuote className="h-3 w-3" />
+                    {curiosityCount} curious
+                </span>
+            )}
         </div>
         <div className="flex gap-2">
             {!isOwnReflection && (
-            <Button variant={hasReacted ? "secondary" : "ghost"} size="sm">
-                <MessageSquareQuote className="h-4 w-4 mr-2" />
-                {hasReacted ? "Curious!" : "Curious?"}
-            </Button>
+            <>
+              <Button variant={hasReacted ? "secondary" : "ghost"} size="sm" onClick={handleCuriosity}>
+                  <MessageSquareQuote className="h-4 w-4 mr-2" />
+                  {hasReacted ? "Curious!" : "Curious?"}
+              </Button>
+            </>
             )}
+            <Button variant={hasReminder ? "secondary" : "ghost"} size="sm" onClick={handleReminder}>
+                <Bell className="h-4 w-4 mr-2" />
+                {hasReminder ? "Reminded" : "Remind Me"}
+            </Button>
+            <Button variant="ghost" size="sm" onClick={handleCopy}>
+                <Copy className="h-4 w-4 mr-2" />
+                Copy
+            </Button>
             {isOwnReflection && (
             <Button
                 variant="ghost"
@@ -143,6 +208,7 @@ const ReflectionCard = ({ reflection, currentUser, onDelete, token, connections 
         </div>
       </CardFooter>
     </Card>
+    </motion.div>
   );
 };
 

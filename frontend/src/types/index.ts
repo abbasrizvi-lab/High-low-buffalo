@@ -33,5 +33,6 @@ export interface Reflection {
   audience_type: 'self' | 'user' | 'herd';
   audience_id: string;
   created_at: string;
-  reactions?: { userId: string; type: 'curiosity' }[];
+  reactions?: { id: string; user_id: string; type: 'curiosity' }[];
+  reminders?: { id: string; user_id: string }[];
 }

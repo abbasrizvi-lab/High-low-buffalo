@@ -59,7 +59,7 @@ const InviteConnectionForm = () => {
                 return;
             }
 
-            const response = await fetch('http://localhost:3001/api/connections', {
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/connections`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

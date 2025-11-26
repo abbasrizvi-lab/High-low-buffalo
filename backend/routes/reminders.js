@@ -3,42 +3,42 @@ const router = express.Router();
 const { supabase } = require('../supabaseClient');
 const authenticate = require('../middleware/auth');
 
-// Get all reactions for a reflection
+// Get reminder status for a reflection
 router.get('/:reflectionId', authenticate, async (req, res) => {
     const { data, error } = await req.supabase
-        .from('reactions')
+        .from('reminders')
         .select('*')
-        .eq('reflection_id', req.params.reflectionId);
+        .eq('reflection_id', req.params.reflectionId)
+        .eq('user_id', req.user.id)
+        .maybeSingle();
+
     if (error) return res.status(500).json({ error: error.message });
-    res.json(data);
+    res.json({ hasReminder: !!data, id: data?.id });
 });
 
-// Create a new reaction
+// Create a reminder
 router.post('/', authenticate, async (req, res) => {
-    const { reflection_id, type } = req.body;
+    const { reflection_id } = req.body;
     const user_id = req.user.id;
 
-    // Ensure type is 'curiosity' for now
-    const reactionType = type || 'curiosity';
-
     const { data, error } = await req.supabase
-        .from('reactions')
-        .insert([{ reflection_id, user_id, type: reactionType }])
+        .from('reminders')
+        .insert([{ reflection_id, user_id }])
         .select()
         .single();
 
     if (error) {
-        // Ignore unique constraint violation (user already reacted)
-        if (error.code === '23505') return res.status(200).json({ message: "Reaction already exists" });
+        // Ignore unique constraint violation (duplicate reminder)
+        if (error.code === '23505') return res.status(200).json({ message: "Reminder already exists" });
         return res.status(500).json({ error: error.message });
     }
     res.json(data);
 });
 
-// Delete a reaction
+// Delete a reminder
 router.delete('/:id', authenticate, async (req, res) => {
     const { error } = await req.supabase
-        .from('reactions')
+        .from('reminders')
         .delete()
         .eq('id', req.params.id)
         .eq('user_id', req.user.id);

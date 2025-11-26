@@ -14,6 +14,7 @@ const usersRouter = require('./routes/users');
 const herdsRouter = require('./routes/herds');
 const connectionsRouter = require('./routes/connections');
 const reactionsRouter = require('./routes/reactions');
+const remindersRouter = require('./routes/reminders');
 
 const authRouter = require('./routes/auth');
 
@@ -22,6 +23,7 @@ app.use('/api/users', usersRouter);
 app.use('/api/herds', herdsRouter);
 app.use('/api/connections', connectionsRouter);
 app.use('/api/reactions', reactionsRouter);
+app.use('/api/reminders', remindersRouter);
 app.use('/api/auth', authRouter);
 
 app.get('/', (req, res) => {

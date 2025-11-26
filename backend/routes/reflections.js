@@ -7,7 +7,12 @@ const authenticate = require('../middleware/auth');
 router.get('/', authenticate, async (req, res) => {
   const { data, error } = await req.supabase
     .from('reflections')
-    .select('*, author:author_id(id, email, username)');
+    .select(`
+      *,
+      author:author_id(id, email, username),
+      reactions(*),
+      reminders(*)
+    `);
   
   if (error) {
     return res.status(500).json({ error: error.message });

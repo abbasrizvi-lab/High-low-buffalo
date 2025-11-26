@@ -1,0 +1,13 @@
+{
+  "name": "social-app-root",
+  "version": "1.0.0",
+  "description": "Root manifest to force Node.js detection on deployment",
+  "scripts": {
+    "install-backend": "cd backend && npm install",
+    "build": "npm run install-backend",
+    "start": "cd backend && npm start"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
